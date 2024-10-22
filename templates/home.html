@@ -1,0 +1,32 @@
+<!-- /templates/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home | Plataforma de Apostas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Bem-vindo à Plataforma de Apostas</h1>
+        <div class="search">
+            <input type="text" placeholder="Pesquisar eventos...">
+            <button>Buscar</button>
+        </div>
+
+        <h2>Eventos Populares</h2>
+        <div class="events">
+            <!-- Exemplo de eventos -->
+            <div class="event">
+                <h3>O Vulcão Etna entrará em erupção no dia X?</h3>
+                <button>Apostar</button>
+            </div>
+            <div class="event">
+                <h3>Quem vencerá as eleições dos EUA em 2024?</h3>
+                <button>Apostar</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Evento | Plataforma de Apostas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Criar Novo Evento</h1>
+
+        <!-- Exibe a mensagem de sucesso aqui -->
+        {% if message %}
+            <div class="message">{{ message }}</div>
+        {% endif %}
+
+        <form action="/create_event" method="POST">
+            <label for="title">Título do Evento:</label>
+            <input type="text" id="title" name="title" maxlength="50" required>
+
+            <label for="description">Descrição Curta:</label>
+            <textarea id="description" name="description" maxlength="150" required></textarea>
+
+            <label for="value">Valor da Cota (em R$):</label>
+            <input type="number" id="value" name="value" min="1" required>
+
+            <label for="start_date">Data de Início das Apostas:</label>
+            <input type="date" id="start_date" name="start_date" required>
+
+            <label for="end_date">Data de Fim das Apostas:</label>
+            <input type="date" id="end_date" name="end_date" required>
+
+            <label for="event_date">Data do Evento:</label>
+            <input type="date" id="event_date" name="event_date" required>
+
+            <button type="submit">Criar Evento</button>
+        </form>
+    </div>
+</body>
+</html>
