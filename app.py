@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -7,7 +7,7 @@ from functools import wraps
 app = Flask(__name__)
 
 # Configurações do Banco de Dados SQLite
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/events.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///events.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'sua_chave_secreta_aqui'
 
@@ -48,13 +48,12 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
-            return redirect(url_for('login'))
+            return redirect('/')
         return f(*args, **kwargs)
     return decorated_function
 
 # Rotas do aplicativo
 @app.route('/', methods=['GET', 'POST'])
-@app.route('/login', methods=['GET', 'POST'])
 def login():
     message = ''
     if request.method == 'POST':
@@ -65,7 +64,7 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             session['user_id'] = user.id
-            return redirect(url_for('home'))
+            return redirect('/home')
         else:
             message = 'Usuário ou senha incorretos.'
 
@@ -75,21 +74,31 @@ def login():
 def signup():
     message = ''
     if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
+        try:
+            username = request.form['username']
+            email = request.form['email']
+            password = request.form['password']
+        except KeyError as e:
+            message = f'Erro no campo: {e}'
+            return render_template('signup.html', message=message)
 
         # Verificar se o email ou username já existem
+        print(f"Tentando registrar usuário: {username}, email: {email}")
         existing_user = User.query.filter((User.username == username) | (User.email == email)).first()
         if existing_user:
             message = 'Usuário ou email já cadastrado.'
+            print("Usuário já existe no banco de dados")
         else:
-            new_user = User(username=username, email=email)
-            new_user.set_password(password)
-            db.session.add(new_user)
-            db.session.commit()
-            message = 'Usuário registrado com sucesso!'
-            return redirect(url_for('login'))
+            try:
+                new_user = User(username=username, email=email)
+                new_user.set_password(password)
+                db.session.add(new_user)
+                db.session.commit()
+                message = 'Usuário registrado com sucesso!'
+                print("Usuário registrado com sucesso!")
+            except Exception as e:
+                message = "Erro ao registrar o usuário."
+                print("Erro ao registrar o usuário:", e)
 
     return render_template('signup.html', message=message)
 
@@ -125,19 +134,9 @@ def create_event():
         db.session.commit()
 
         message = "Evento criado com sucesso!"
-        return redirect(url_for('home'))
 
     return render_template('create_event.html', message=message)
 
-# Rota para logout
-@app.route('/logout')
-@login_required
-def logout():
-    session.pop('user_id', None)
-    return redirect(url_for('login'))
-
 # Iniciar o servidor Flask
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()  # Cria as tabelas se ainda não existirem
     app.run(debug=True)
