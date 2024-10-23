@@ -1,0 +1,27 @@
+<!-- templates/bet.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fazer Aposta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Fazer Aposta</h1>
+        <h3>Evento: {{ event.title }}</h3>
+        <p>Descrição: {{ event.description }}</p>
+        <p>Data do Evento: {{ event.event_date }}</p>
+
+        <form action="/bet/{{ event.id }}" method="POST">
+            <label for="amount">Valor da Aposta (R$):</label>
+            <input type="text" id="amount" name="amount" required>
+            <button type="submit">Fazer Aposta</button>
+        </form>
+        
+
+        <a href="/home">Voltar para Home</a>
+    </div>
+</body>
+</html>

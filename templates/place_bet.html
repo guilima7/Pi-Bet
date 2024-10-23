@@ -1,0 +1,24 @@
+<!-- /templates/place_bet.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fazer Aposta | Plataforma de Apostas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Fazer Aposta</h2>
+        <h3>Evento: {{ event.title }}</h3>
+        <p>Descrição: {{ event.description }}</p>
+        <p>Data do Evento: {{ event.event_date }}</p>
+        
+        <form action="" method="POST">
+            <label for="amount">Valor da Aposta (R$):</label>
+            <input type="number" id="amount" name="amount" min="1" required>
+            <button type="submit">Fazer Aposta</button>
+        </form>
+    </div>
+</body>
+</html>

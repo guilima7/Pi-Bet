@@ -1,4 +1,3 @@
-<!-- /templates/home.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,22 +9,15 @@
 <body>
     <div class="container">
         <h1>Bem-vindo à Plataforma de Apostas</h1>
-        <div class="search">
-            <input type="text" placeholder="Pesquisar eventos...">
-            <button>Buscar</button>
-        </div>
-
-        <h2>Eventos Populares</h2>
+        <h2>Eventos Disponíveis</h2>
         <div class="events">
-            <!-- Exemplo de eventos -->
+            {% for event in events %}
             <div class="event">
-                <h3>O Vulcão Etna entrará em erupção no dia X?</h3>
-                <button>Apostar</button>
+                <h3>{{ event.title }}</h3>
+                <p>{{ event.description }}</p>
+                <a href="{{ url_for('place_bet', event_id=event.id) }}"><button>Apostar</button></a>
             </div>
-            <div class="event">
-                <h3>Quem vencerá as eleições dos EUA em 2024?</h3>
-                <button>Apostar</button>
-            </div>
+            {% endfor %}
         </div>
     </div>
 </body>

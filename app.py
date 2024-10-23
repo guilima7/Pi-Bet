@@ -20,6 +20,7 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
+    balance = db.Column(db.Float, default=0.0)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -105,7 +106,8 @@ def signup():
 @app.route('/home')
 @login_required
 def home():
-    return render_template('home.html')
+    events = Event.query.all()
+    return render_template('home.html', events=events)
 
 @app.route('/create_event', methods=['GET', 'POST'])
 @login_required
@@ -136,6 +138,31 @@ def create_event():
         message = "Evento criado com sucesso!"
 
     return render_template('create_event.html', message=message)
+
+@app.route('/bet/<int:event_id>', methods=['GET', 'POST'])
+@login_required
+def place_bet(event_id):
+    event = Event.query.get_or_404(event_id)
+    message = ''
+    if request.method == 'POST':
+        amount = float(request.form['amount'])
+        user = User.query.get(session['user_id'])
+
+        if user.balance >= amount:
+            # Subtrair valor da aposta do saldo do usuário
+            user.balance -= amount
+
+            # Registrar a aposta (neste exemplo, apenas imprimindo no console)
+            print(f"Usuário {user.username} apostou R$ {amount} no evento {event.title}")
+
+            # Salvar as mudanças no banco de dados
+            db.session.commit()
+
+            message = "Aposta realizada com sucesso!"
+        else:
+            message = "Saldo insuficiente para realizar a aposta."
+
+    return render_template('bet.html', event=event, message=message)
 
 # Iniciar o servidor Flask
 if __name__ == "__main__":
