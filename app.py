@@ -164,6 +164,22 @@ def place_bet(event_id):
 
     return render_template('bet.html', event=event, message=message)
 
+@app.route('/wallet', methods=['GET', 'POST'])
+@login_required
+def wallet():
+    user = User.query.get(session['user_id'])
+    message = ''
+    if request.method == 'POST':
+        try:
+            amount = float(request.form['amount'])
+            user.balance += amount
+            db.session.commit()
+            message = 'Saldo adicionado com sucesso!'
+        except ValueError:
+            message = 'Valor inválido.'
+
+    return render_template('wallet.html', balance=user.balance, message=message)
+
 # Iniciar o servidor Flask
 if __name__ == "__main__":
     app.run(debug=True)

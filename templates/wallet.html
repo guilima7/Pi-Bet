@@ -3,25 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Carteira | Plataforma de Apostas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Carteira | Plataforma de Apostas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Minha Carteira</h1>
-        <p>Saldo atual: R$ {{ user.balance }}</p>
-        
-        {% if message %}
-            <div class="message">{{ message }}</div>
-        {% endif %}
+        <h2>Carteira</h2>
+        <p>Saldo atual: R$ {{ balance }}</p>
 
         <form action="/wallet" method="POST">
-            <label for="amount">Valor:</label>
-            <input type="number" id="amount" name="amount" min="1" required>
-            
-            <button type="submit" name="add_balance">Adicionar Saldo</button>
-            <button type="submit" name="withdraw_balance">Sacar Saldo</button>
+            <label for="amount">Adicionar Saldo (R$):</label>
+            <input type="number" step="0.01" id="amount" name="amount" required>
+            <button type="submit">Adicionar Saldo</button>
         </form>
+
+        <p><a href="/home">Voltar para Home</a></p>
     </div>
 </body>
 </html>
