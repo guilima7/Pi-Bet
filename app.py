@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+from datetime import datetime
+
 
 
 # Inicializar o Flask
@@ -119,8 +121,22 @@ def signup():
 @login_required
 def home():
     user = User.query.get(session['user_id'])
-    events = Event.query.all()
+    events = Event.query.all()  # Pegar todos os eventos do banco de dados
     return render_template('home.html', user=user, events=events)
+
+
+@app.route('/search', methods=['GET'])
+@login_required
+def search():
+    query = request.args.get('query', '')
+    if query:
+        results = Event.query.filter(
+            Event.title.ilike(f"%{query}%") | Event.description.ilike(f"%{query}%")
+        ).all()
+    else:
+        results = []
+
+    return render_template('search_results.html', query=query, results=results)
 
 
 # Código em app.py (parte de criação de evento)
@@ -313,6 +329,14 @@ def withdraw():
             message = "Por favor, insira um valor numérico válido."
 
     return redirect(url_for('wallet', message=message))
+
+@app.route('/logout')
+@login_required
+def logout():
+    # Limpar a sessão do usuário
+    session.pop('user_id', None)
+    return redirect('/')
+
 
 
 

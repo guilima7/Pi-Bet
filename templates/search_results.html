@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados da Busca | Plataforma de Apostas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #000000, #ff1493);
+            color: #ffffff;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .container {
+            width: 80%;
+            max-width: 800px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.6);
+        }
+        h2 {
+            color: #ff1493;
+            margin-bottom: 20px;
+        }
+        .event-card {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.6);
+            margin-bottom: 15px;
+        }
+        .event-card h3 {
+            color: #ff69b4;
+            margin-bottom: 10px;
+        }
+        .event-card p {
+            font-size: 0.9em;
+        }
+        a {
+            color: #ff1493;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            color: #ff69b4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Resultados da Busca: "{{ query }}"</h2>
+        {% if results %}
+            {% for event in results %}
+                <div class="event-card">
+                    <h3>{{ event.title }}</h3>
+                    <p>{{ event.description }}</p>
+                    <p>Data do Evento: {{ event.event_date }}</p>
+                    <a href="{{ url_for('place_bet', event_id=event.id) }}">Fazer Aposta</a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Nenhum evento encontrado para "{{ query }}".</p>
+        {% endif %}
+        <p><a href="{{ url_for('home') }}">Voltar para Home</a></p>
+    </div>
+</body>
+</html>

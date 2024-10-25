@@ -1,27 +1,114 @@
-<!-- templates/bet.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fazer Aposta</title>
+    <title>Aposta | Plataforma de Apostas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #000000, #ff1493);
+            color: #ffffff;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            width: 400px;
+            animation: fadeIn 1.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        h2 {
+            color: #ff1493;
+            font-size: 2.5em;
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            text-align: left;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background: #ff1493;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background: #ff69b4;
+        }
+        p {
+            margin-top: 20px;
+            font-size: 1em;
+        }
+        a {
+            color: #ff1493;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            color: #ff69b4;
+        }
+        .event-info {
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        .event-info p {
+            color: #ffffff;
+            font-size: 1em;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Fazer Aposta</h1>
-        <h3>Evento: {{ event.title }}</h3>
-        <p>Descrição: {{ event.description }}</p>
-        <p>Data do Evento: {{ event.event_date }}</p>
+        <h2>Fazer Aposta</h2>
+        
+        <div class="event-info">
+            <p><strong>Título do Evento:</strong> {{ event.title }}</p>
+            <p><strong>Descrição:</strong> {{ event.description }}</p>
+            <p><strong>Valor da Cota:</strong> R$ {{ event.value }}</p>
+        </div>
 
-        <form action="/bet/{{ event.id }}" method="POST">
+        <form method="POST" action="{{ url_for('place_bet', event_id=event.id) }}">
             <label for="amount">Valor da Aposta (R$):</label>
-            <input type="text" id="amount" name="amount" required>
+            <input type="number" id="amount" name="amount" step="0.01" min="1" required>
+
             <button type="submit">Fazer Aposta</button>
         </form>
         
-
-        <a href="/home">Voltar para Home</a>
+        {% if message %}
+            <p>{{ message }}</p>
+        {% endif %}
+        
+        <p><a href="{{ url_for('home') }}">Voltar para Home</a></p>
     </div>
 </body>
 </html>
