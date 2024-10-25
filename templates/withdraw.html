@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saque | Plataforma de Apostas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Saque</h1>
+        <p>Saldo atual: R$ {{ user.balance }}</p>
+        <form method="POST">
+            <label for="method">Escolha o método de saque:</label><br>
+            <input type="radio" id="pix" name="method" value="pix" required> 
+            <label for="pix">Pix</label><br>
+            <input type="radio" id="bank_transfer" name="method" value="bank_transfer">
+            <label for="bank_transfer">Transferência Bancária</label><br><br>
+            
+            <label for="amount">Valor a sacar (R$):</label><br>
+            <input type="number" id="amount" name="amount" step="0.01" required><br><br>
+            
+            <button type="submit">Sacar</button>
+        </form>
+        <p>{{ message }}</p>
+        <a href="{{ url_for('home') }}">Voltar para Home</a>
+    </div>
+</body>
+</html>

@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
+
 # Inicializar o Flask
 app = Flask(__name__)
 
@@ -43,6 +44,17 @@ class Event(db.Model):
 
     def __repr__(self):
         return f'<Event {self.title}>'
+
+# Modelo de Transação
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    type = db.Column(db.String(50), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+
+    def __repr__(self):
+        return f'<Transaction {self.type} - {self.amount}>'
 
 # Função para proteger rotas
 def login_required(f):
@@ -158,6 +170,11 @@ def place_bet(event_id):
             # Salvar as mudanças no banco de dados
             db.session.commit()
 
+            # Registrar a transação
+            new_transaction = Transaction(user_id=user.id, type='bet', amount=-amount)
+            db.session.add(new_transaction)
+            db.session.commit()
+
             message = "Aposta realizada com sucesso!"
         else:
             message = "Saldo insuficiente para realizar a aposta."
@@ -169,16 +186,58 @@ def place_bet(event_id):
 def wallet():
     user = User.query.get(session['user_id'])
     message = ''
-    if request.method == 'POST':
-        try:
-            amount = float(request.form['amount'])
-            user.balance += amount
-            db.session.commit()
-            message = 'Saldo adicionado com sucesso!'
-        except ValueError:
-            message = 'Valor inválido.'
 
-    return render_template('wallet.html', balance=user.balance, message=message)
+    if request.method == 'POST':
+        if 'add_balance' in request.form:
+            try:
+                amount = float(request.form['amount'])
+                if amount > 0:
+                    user.balance += amount
+                    db.session.commit()
+                    message = "Saldo adicionado com sucesso!"
+
+                    # Registrar a transação
+                    new_transaction = Transaction(user_id=user.id, type='deposit', amount=amount)
+                    db.session.add(new_transaction)
+                    db.session.commit()
+                else:
+                    message = "O valor deve ser maior que zero."
+            except ValueError:
+                message = "Por favor, insira um valor numérico válido."
+        elif 'withdraw_balance' in request.form:
+            try:
+                amount = float(request.form['amount'])
+                if amount > 0 and user.balance >= amount:
+                    user.balance -= amount
+                    db.session.commit()
+                    message = "Saldo sacado com sucesso!"
+
+                    # Registrar a transação
+                    new_transaction = Transaction(user_id=user.id, type='withdraw', amount=-amount)
+                    db.session.add(new_transaction)
+                    db.session.commit()
+                elif amount > 0:
+                    message = "Saldo insuficiente para realizar o saque."
+                else:
+                    message = "O valor deve ser maior que zero."
+            except ValueError:
+                message = "Por favor, insira um valor numérico válido."
+
+    # Obter histórico de transações
+    transactions = Transaction.query.filter_by(user_id=user.id).all()
+
+    return render_template('wallet.html', user=user, message=message, transactions=transactions)
+
+@app.route('/welcome', methods=['GET'])
+def welcome():
+    return render_template('welcome.html')
+
+from flask import send_from_directory
+
+@app.route('/static/images/<path:filename>')
+def custom_static(filename):
+    return send_from_directory('static/images', filename)
+
 
 # Iniciar o servidor Flask
 if __name__ == "__main__":

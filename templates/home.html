@@ -9,6 +9,11 @@
 <body>
     <div class="container">
         <h1>Bem-vindo à Plataforma de Apostas</h1>
+        
+        <div class="wallet-section">
+            <a href="{{ url_for('wallet') }}"><button>Minha Carteira</button></a>
+        </div>
+
         <h2>Eventos Disponíveis</h2>
         <div class="events">
             {% for event in events %}
