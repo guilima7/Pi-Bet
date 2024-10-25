@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -118,38 +118,58 @@ def signup():
 @app.route('/home')
 @login_required
 def home():
+    user = User.query.get(session['user_id'])
     events = Event.query.all()
-    return render_template('home.html', events=events)
+    return render_template('home.html', user=user, events=events)
+
+
+# Código em app.py (parte de criação de evento)
 
 @app.route('/create_event', methods=['GET', 'POST'])
 @login_required
 def create_event():
     message = ''
     if request.method == 'POST':
-        title = request.form['title']
-        description = request.form['description']
-        value = request.form['value']
-        start_date = request.form['start_date']
-        end_date = request.form['end_date']
-        event_date = request.form['event_date']
+        try:
+            title = request.form['title']
+            description = request.form['description']
+            value = float(request.form['value'])
+            start_date = datetime.strptime(request.form['start_date'], "%Y-%m-%d %H:%M")
+            end_date = datetime.strptime(request.form['end_date'], "%Y-%m-%d %H:%M")
+            event_date = datetime.strptime(request.form['event_date'], "%Y-%m-%d").date()
+            
+            if len(title) > 50:
+                message = 'O título deve ter no máximo 50 caracteres.'
+            elif len(description) > 150:
+                message = 'A descrição deve ter no máximo 150 caracteres.'
+            elif value < 1:
+                message = 'O valor de cada cota deve ser no mínimo R$ 1,00.'
+            elif start_date >= end_date:
+                message = 'A data de início deve ser antes da data de término.'
+            elif end_date >= event_date:
+                message = 'A data do evento deve ser após o período de recebimento das apostas.'
+            else:
+                # Criar um novo evento
+                new_event = Event(
+                    title=title,
+                    description=description,
+                    value=value,
+                    start_date=start_date.strftime("%Y-%m-%d %H:%M"),
+                    end_date=end_date.strftime("%Y-%m-%d %H:%M"),
+                    event_date=event_date.strftime("%Y-%m-%d")
+                )
 
-        # Criar um novo evento
-        new_event = Event(
-            title=title,
-            description=description,
-            value=value,
-            start_date=start_date,
-            end_date=end_date,
-            event_date=event_date
-        )
+                # Adicionar ao banco de dados
+                db.session.add(new_event)
+                db.session.commit()
+                message = "Evento criado com sucesso!"
+                return redirect('/home')
 
-        # Adicionar ao banco de dados
-        db.session.add(new_event)
-        db.session.commit()
-
-        message = "Evento criado com sucesso!"
+        except ValueError:
+            message = 'Por favor, insira valores válidos para as datas e valor da cota.'
 
     return render_template('create_event.html', message=message)
+
 
 @app.route('/bet/<int:event_id>', methods=['GET', 'POST'])
 @login_required
@@ -181,6 +201,7 @@ def place_bet(event_id):
 
     return render_template('bet.html', event=event, message=message)
 
+# Código em app.py
 @app.route('/wallet', methods=['GET', 'POST'])
 @login_required
 def wallet():
@@ -188,45 +209,59 @@ def wallet():
     message = ''
 
     if request.method == 'POST':
-        if 'add_balance' in request.form:
+        action = request.form.get('action')
+        
+        if action == 'deposit':
+            # Depósito
             try:
                 amount = float(request.form['amount'])
                 if amount > 0:
                     user.balance += amount
+                    db.session.add(Transaction(user_id=user.id, type='deposit', amount=amount))
                     db.session.commit()
                     message = "Saldo adicionado com sucesso!"
-
-                    # Registrar a transação
-                    new_transaction = Transaction(user_id=user.id, type='deposit', amount=amount)
-                    db.session.add(new_transaction)
-                    db.session.commit()
                 else:
                     message = "O valor deve ser maior que zero."
             except ValueError:
                 message = "Por favor, insira um valor numérico válido."
-        elif 'withdraw_balance' in request.form:
+
+        elif action == 'withdraw':
+            # Saque
             try:
-                amount = float(request.form['amount'])
-                if amount > 0 and user.balance >= amount:
-                    user.balance -= amount
-                    db.session.commit()
-                    message = "Saldo sacado com sucesso!"
+                amount = float(request.form['withdraw_amount'])
+                if amount > 0 and amount <= user.balance:
+                    if amount > 101000:
+                        message = "O valor máximo de saque por dia é de R$ 101.000,00."
+                    else:
+                        # Calculando a taxa
+                        if amount <= 100:
+                            fee = amount * 0.04
+                        elif amount <= 1000:
+                            fee = amount * 0.03
+                        elif amount <= 5000:
+                            fee = amount * 0.02
+                        elif amount <= 100000:
+                            fee = amount * 0.01
+                        else:
+                            fee = 0.0
 
-                    # Registrar a transação
-                    new_transaction = Transaction(user_id=user.id, type='withdraw', amount=-amount)
-                    db.session.add(new_transaction)
-                    db.session.commit()
-                elif amount > 0:
-                    message = "Saldo insuficiente para realizar o saque."
+                        total_withdraw = amount + fee
+                        
+                        if total_withdraw > user.balance:
+                            message = f"Saldo insuficiente para realizar o saque com a taxa aplicada de R$ {fee:.2f}."
+                        else:
+                            user.balance -= total_withdraw
+                            db.session.add(Transaction(user_id=user.id, type='withdraw', amount=amount, fee=fee))
+                            db.session.commit()
+                            message = f"Saque de R$ {amount:.2f} realizado com sucesso! Taxa de R$ {fee:.2f} aplicada."
                 else:
-                    message = "O valor deve ser maior que zero."
+                    message = "O valor deve ser maior que zero e menor ou igual ao saldo disponível."
             except ValueError:
                 message = "Por favor, insira um valor numérico válido."
 
-    # Obter histórico de transações
     transactions = Transaction.query.filter_by(user_id=user.id).all()
-
     return render_template('wallet.html', user=user, message=message, transactions=transactions)
+
 
 @app.route('/welcome', methods=['GET'])
 def welcome():
@@ -237,6 +272,48 @@ from flask import send_from_directory
 @app.route('/static/images/<path:filename>')
 def custom_static(filename):
     return send_from_directory('static/images', filename)
+
+@app.route('/withdraw', methods=['POST'])
+@login_required
+def withdraw():
+    user = User.query.get(session['user_id'])
+    message = ''
+
+    if request.method == 'POST':
+        try:
+            withdraw_amount = float(request.form['withdraw_amount'])
+            if withdraw_amount <= 0:
+                message = "O valor do saque deve ser maior que zero."
+            elif withdraw_amount > user.balance:
+                message = "Saldo insuficiente para realizar o saque."
+            else:
+                # Calcular a taxa com base na tabela fornecida
+                if withdraw_amount <= 100:
+                    fee_rate = 0.04
+                elif withdraw_amount <= 1000:
+                    fee_rate = 0.03
+                elif withdraw_amount <= 5000:
+                    fee_rate = 0.02
+                elif withdraw_amount <= 100000:
+                    fee_rate = 0.01
+                else:
+                    fee_rate = 0.0
+
+                fee = withdraw_amount * fee_rate
+                total_withdraw = withdraw_amount + fee
+
+                if total_withdraw > user.balance:
+                    message = "Saldo insuficiente para realizar o saque e pagar a taxa."
+                else:
+                    user.balance -= total_withdraw
+                    db.session.commit()
+                    message = f"Saque de R$ {withdraw_amount:.2f} realizado com sucesso! Taxa aplicada: R$ {fee:.2f}."
+
+        except ValueError:
+            message = "Por favor, insira um valor numérico válido."
+
+    return redirect(url_for('wallet', message=message))
+
 
 
 # Iniciar o servidor Flask

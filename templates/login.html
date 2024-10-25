@@ -1,31 +1,130 @@
-<!-- /templates/login.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Plataforma de Apostas</title>
+    <title>Login | Plataforma de Apostas Esportivas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #1e1e1e, #ff1493);
+            font-family: Arial, sans-serif;
+            color: #ffffff;
+        }
+        .login-container {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 60px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
+            animation: pulse-bg 1.7s infinite;
+        }
+        @keyframes pulse-bg {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 20, 147, 0.8); }
+            50% { box-shadow: 0 0 30px rgba(255, 105, 180, 0.9); }
+        }
+        .login-container h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            color: #ff1493;
+            text-shadow: 2px 2px #000;
+        }
+        .login-container form {
+            margin-bottom: 40px;
+        }
+        .login-container input[type="text"],
+        .login-container input[type="password"] {
+            width: 90%;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+        }
+        .login-container button[type="submit"] {
+            background: #ff1493;
+            color: #ffffff;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            box-shadow: 0 5px #000;
+        }
+        .login-container button[type="submit"]:hover {
+            background: #ff69b4;
+        }
+        .features {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+        .feature {
+            background: rgba(30, 30, 30, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            width: 28%;
+            box-shadow: 0 0 10px rgba(255, 20, 147, 0.5);
+        }
+        .feature h3 {
+            color: #ff1493;
+            margin-bottom: 15px;
+        }
+        .feature p {
+            font-size: 1em;
+            color: #fff;
+        }
+        .signup-container {
+            margin-top: 30px;
+        }
+        .signup-container a {
+            text-decoration: none;
+            color: #ffffff;
+            background: #ff1493;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .signup-container a:hover {
+            background: #ff69b4;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Login</h2>
-
-        <!-- Exibe a mensagem de erro, caso exista -->
-        {% if message %}
-            <div class="message">{{ message }}</div>
-        {% endif %}
-
-        <form action="/" method="POST">
-            <label for="username">Nome de Usuário:</label>
-            <input type="text" id="username" name="username" required>
-            
-            <label for="password">Senha:</label>
-            <input type="password" id="password" name="password" required>
-
-            <button type="submit">Entrar</button>
+    <div class="login-container">
+        <h2>Faça Login na Sua Conta</h2>
+        <form action="{{ url_for('login') }}" method="POST">
+            <input type="text" name="username" placeholder="Nome de Usuário" required>
+            <input type="password" name="password" placeholder="Senha" required>
+            <button type="submit">Login</button>
         </form>
-        <p>Não tem uma conta? <a href="/signup">Cadastre-se aqui</a></p>
+        <div class="features">
+            <div class="feature">
+                <h3>Segurança Garantida</h3>
+                <p>Plataforma segura para todas as suas apostas.</p>
+            </div>
+            <div class="feature">
+                <h3>Variedade de Eventos</h3>
+                <p>Aposte nos mais diversos eventos do mundo, tudo em um só lugar.</p>
+            </div>
+            <div class="feature">
+                <h3>Prêmios Instantâneos</h3>
+                <p>Receba seus prêmios de forma rápida e segura após o final de cada evento.</p>
+            </div>
+        </div>
+        <div class="signup-container">
+            <a href="{{ url_for('signup') }}">Não tem uma conta? Cadastre-se agora!</a>
+        </div>
     </div>
 </body>
 </html>

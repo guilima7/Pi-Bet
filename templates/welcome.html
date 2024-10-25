@@ -24,30 +24,44 @@
             border-radius: 15px;
             text-align: center;
             max-width: 500px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* Adiciona um destaque em volta */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            animation: pulse-bg 1.7s infinite; /* Adiciona animação de pulsação ao fundo */
+        }
+        @keyframes pulse-bg {
+            0% { background: rgba(255, 20, 147, 0.7); }
+            50% { background: rgba(255, 105, 180, 0.9); }
+            100% { background: rgba(255, 20, 147, 0.7); }
         }
         .content h1 {
             font-size: 2.5em;
             margin-bottom: 25px;
-            color: #ffffff; /* Branco */
-            text-shadow: 2px 2px #000; /* Sombra preta para destacar o texto */
+            color: #ffffff;
+            text-shadow: 2px 2px #000;
         }
         .content p {
             font-size: 1.4em;
             margin-bottom: 25px;
-            color: #000000; /* Preto */
+            color: #ffffff; /* Branco */
+            font-weight: bold; /* Negrito */
         }
         .content a {
             text-decoration: none;
-            color: #ffffff; /* Branco */
+            color: #ffffff;
             background: #ff1493; /* Rosa choque */
             padding: 15px 25px;
             border-radius: 10px;
             font-weight: bold;
-            box-shadow: 0 5px #000; /* Sombra preta para destacar o botão */
+            box-shadow: 0 5px #000;
+            animation: pulse-button 1.5s infinite alternate; /* Animação de pulsação no botão */
+            display: inline-block;
+            margin-top: 20px; /* Adiciona margem ao topo do botão */
+        }
+        @keyframes pulse-button {
+            0% { background: #ff1493; }
+            100% { background: #ff69b4; }
         }
         .content a:hover {
-            background: #ff69b4; /* Rosa mais claro ao passar o mouse */
+            background: #ff69b4;
         }
         .icons {
             margin: 20px 0;
@@ -62,13 +76,15 @@
 </head>
 <body>
     <div class="content">
-        <h1>Bem-vindo à Melhor Plataforma de Apostas Esportivas!</h1>
-        <p>Aposte nos seus eventos favoritos e viva toda a emoção do esporte.</p>
+        <h1>Bem-vindo à Melhor Plataforma de Apostas!</h1>
+        <p>Aposte nos seus eventos favoritos e viva toda essa emoção e adrenalina insana.</p>
         <div class="icons">
             <img src="{{ url_for('static', filename='images/soccer_ball.png') }}" alt="Soccer Ball">
+            <img src="{{ url_for('static', filename='images/icons8-bet-64.png') }}" alt="bet">
             <img src="{{ url_for('static', filename='images/basketball.png') }}" alt="Basketball">
             <img src="{{ url_for('static', filename='images/tennis_ball.png') }}" alt="Tennis Ball">
             <img src="{{ url_for('static', filename='images/football.png') }}" alt="American Football">
+            <img src="{{ url_for('static', filename='images/icons8-target-64.png') }}" alt="Target">
         </div>
         <a href="{{ url_for('login') }}">Acesse ou crie sua conta por aqui!</a>
     </div>

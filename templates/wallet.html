@@ -4,24 +4,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carteira | Plataforma de Apostas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #000000, #ff1493);
+            font-family: 'Roboto', sans-serif;
+            color: #ffffff;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            width: 600px; /* Aumentei a largura da carteira */
+            animation: fadeIn 1.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        h1 {
+            color: #ff1493;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            text-align: left;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background: #ff1493;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background: #ff69b4;
+        }
+        .payment-button {
+            margin: 10px 0;
+            display: inline-block;
+            padding: 15px;
+            width: 48%;
+            font-size: 1.1em;
+        }
+        .fees-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        .fees-table th, .fees-table td {
+            border: 1px solid #ffffff;
+            padding: 10px;
+            text-align: center;
+        }
+        .fees-table th {
+            background: #ff1493;
+            color: #ffffff;
+        }
+        .fees-table td {
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Carteira</h1>
         <p>Saldo atual: R$ {{ user.balance }}</p>
-        <form method="POST">
-            <label for="method">Escolha o método de pagamento:</label><br>
-            <input type="radio" id="pix" name="method" value="pix" required> 
-            <label for="pix">Pix</label><br>
-            <input type="radio" id="credit_card" name="method" value="credit_card">
-            <label for="credit_card">Cartão de Crédito</label><br><br>
-            
+
+        <form method="POST" action="/wallet">
+            <label for="method">Escolha o método de pagamento:</label>
+            <div>
+                <button type="button" class="payment-button" onclick="selectPaymentMethod('pix')">Pix</button>
+                <button type="button" class="payment-button" onclick="selectPaymentMethod('credit_card')">Cartão de Crédito</button>
+            </div>
+
+            <input type="hidden" id="method" name="method" required>
+
             <div id="pix-fields" style="display: none;">
                 <label for="pix_key">Chave Pix:</label><br>
                 <input type="text" id="pix_key" name="pix_key"><br><br>
             </div>
-            
+
             <div id="credit-card-fields" style="display: none;">
                 <label for="card_number">Número do Cartão:</label><br>
                 <input type="text" id="card_number" name="card_number"><br><br>
@@ -30,57 +118,68 @@
                 <label for="cvv">CVV:</label><br>
                 <input type="text" id="cvv" name="cvv"><br><br>
             </div>
-            
+
             <label for="amount">Valor a adicionar (R$):</label><br>
             <input type="number" id="amount" name="amount" step="0.01" required><br><br>
-            
-            <button type="submit" name="add_balance">Adicionar Saldo</button>
+
+            <button type="submit">Adicionar Saldo</button>
         </form>
 
-        <form method="POST">
+        <form method="POST" action="/withdraw">
             <label for="withdraw_amount">Valor a sacar (R$):</label><br>
-            <input type="number" id="withdraw_amount" name="amount" step="0.01" required><br><br>
-            <button type="submit" name="withdraw_balance">Sacar Saldo</button>
+            <input type="number" id="withdraw_amount" name="withdraw_amount" step="0.01" required><br><br>
+
+            <button type="submit">Sacar Saldo</button>
         </form>
 
-        <p>{{ message }}</p>
-
-        <h2>Histórico de Transações</h2>
-        <table border="1">
+        <h2>Tabela de Taxas de Saque</h2>
+        <table class="fees-table">
             <thead>
                 <tr>
-                    <th>Tipo</th>
-                    <th>Valor (R$)</th>
-                    <th>Data e Hora</th>
+                    <th>Valor</th>
+                    <th>Taxa cobrada sobre o valor a ser sacado</th>
                 </tr>
             </thead>
             <tbody>
-                {% for transaction in transactions %}
                 <tr>
-                    <td>{{ transaction.type }}</td>
-                    <td>{{ transaction.amount }}</td>
-                    <td>{{ transaction.timestamp }}</td>
+                    <td>Até R$ 100</td>
+                    <td>4%</td>
                 </tr>
-                {% endfor %}
+                <tr>
+                    <td>De R$ 101 a R$ 1000</td>
+                    <td>3%</td>
+                </tr>
+                <tr>
+                    <td>De R$ 1001 a R$ 5000</td>
+                    <td>2%</td>
+                </tr>
+                <tr>
+                    <td>R$ 5001 a R$ 100.000</td>
+                    <td>1%</td>
+                </tr>
+                <tr>
+                    <td>Acima de R$ 101.000</td>
+                    <td>Isento de taxa</td>
+                </tr>
             </tbody>
         </table>
 
-        <a href="{{ url_for('home') }}">Voltar para Home</a>
+        <p>{{ message }}</p>
+        <a href="{{ url_for('home') }}" style="color: #ff1493; font-weight: bold;">Voltar para Home</a>
     </div>
 
     <script>
-        // Mostrar campos específicos com base na seleção do método de pagamento
-        document.querySelectorAll('input[name="method"]').forEach((elem) => {
-            elem.addEventListener('change', function(event) {
-                if (event.target.value === 'pix') {
-                    document.getElementById('pix-fields').style.display = 'block';
-                    document.getElementById('credit-card-fields').style.display = 'none';
-                } else if (event.target.value === 'credit_card') {
-                    document.getElementById('pix-fields').style.display = 'none';
-                    document.getElementById('credit-card-fields').style.display = 'block';
-                }
-            });
-        });
+        function selectPaymentMethod(method) {
+            document.getElementById('method').value = method;
+
+            if (method === 'pix') {
+                document.getElementById('pix-fields').style.display = 'block';
+                document.getElementById('credit-card-fields').style.display = 'none';
+            } else if (method === 'credit_card') {
+                document.getElementById('pix-fields').style.display = 'none';
+                document.getElementById('credit-card-fields').style.display = 'block';
+            }
+        }
     </script>
 </body>
 </html>

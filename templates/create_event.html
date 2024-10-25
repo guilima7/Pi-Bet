@@ -4,17 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Criar Evento | Plataforma de Apostas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #000000, #ff1493);
+            font-family: 'Roboto', sans-serif;
+            color: #ffffff;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            width: 500px;
+            animation: fadeIn 1.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        h1 {
+            color: #ff1493;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            text-align: left;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background: #ff1493;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+            font-size: 1.2em;
+        }
+        button:hover {
+            background: #ff69b4;
+        }
+        p {
+            margin-top: 20px;
+            font-size: 1em;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Criar Novo Evento</h1>
-
-        <!-- Exibe a mensagem de sucesso aqui -->
-        {% if message %}
-            <div class="message">{{ message }}</div>
-        {% endif %}
-
         <form action="/create_event" method="POST">
             <label for="title">Título do Evento:</label>
             <input type="text" id="title" name="title" maxlength="50" required>
@@ -22,20 +80,21 @@
             <label for="description">Descrição Curta:</label>
             <textarea id="description" name="description" maxlength="150" required></textarea>
 
-            <label for="value">Valor da Cota (em R$):</label>
-            <input type="number" id="value" name="value" min="1" required>
+            <label for="value">Valor de Cada Cota (R$):</label>
+            <input type="number" id="value" name="value" step="0.01" min="1" required>
 
-            <label for="start_date">Data de Início das Apostas:</label>
-            <input type="date" id="start_date" name="start_date" required>
+            <label for="start_date">Data e Hora de Início das Apostas:</label>
+            <input type="datetime-local" id="start_date" name="start_date" required>
 
-            <label for="end_date">Data de Fim das Apostas:</label>
-            <input type="date" id="end_date" name="end_date" required>
+            <label for="end_date">Data e Hora de Término das Apostas:</label>
+            <input type="datetime-local" id="end_date" name="end_date" required>
 
-            <label for="event_date">Data do Evento:</label>
+            <label for="event_date">Data do Evento (YYYY-MM-DD):</label>
             <input type="date" id="event_date" name="event_date" required>
 
             <button type="submit">Criar Evento</button>
         </form>
+        <p>{{ message }}</p>
     </div>
 </body>
 </html>

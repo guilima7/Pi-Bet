@@ -4,26 +4,179 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home | Plataforma de Apostas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #000000, #ff1493);
+            color: #ffffff;
+        }
+        .sidebar {
+            width: 250px;
+            background: #1a1a1a;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .sidebar a {
+            color: #ff1493;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 10px 15px;
+            border-radius: 10px;
+            transition: background 0.3s;
+        }
+        .sidebar a:hover {
+            background: #ff69b4;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+        }
+        .balance-container {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            background: rgba(255, 20, 147, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            box-shadow: 0 5px #000;
+        }
+        .search-container {
+            margin-bottom: 30px;
+        }
+        .search-container input[type="text"] {
+            width: 80%;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .search-container button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 5px;
+            background: #ff1493;
+            color: #ffffff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .search-container button:hover {
+            background: #ff69b4;
+        }
+        .highlights {
+            margin-top: 20px;
+        }
+        .highlights h3 {
+            color: #ff1493;
+            margin-bottom: 15px;
+        }
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .event-card {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.6);
+            transition: transform 0.3s;
+        }
+        .event-card:hover {
+            transform: translateY(-5px);
+        }
+        .event-card h4 {
+            color: #ff69b4;
+            margin-bottom: 10px;
+        }
+        .event-card p {
+            color: #ffffff;
+            font-size: 0.9em;
+        }
+        .event-card .button {
+            display: inline-block;
+            background: #ff1493;
+            padding: 10px 20px;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        .event-card .button:hover {
+            background: #ff69b4;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Bem-vindo à Plataforma de Apostas</h1>
-        
-        <div class="wallet-section">
-            <a href="{{ url_for('wallet') }}"><button>Minha Carteira</button></a>
+    <div class="sidebar">
+        <h2>Menu</h2>
+        <a href="{{ url_for('wallet') }}">Carteira</a>
+        <a href="{{ url_for('create_event') }}">Criar Evento</a>
+        <a href="/logout">Sair</a>
+    </div>
+
+    <div class="main-content">
+        <div class="balance-container">
+            Saldo: R$ {{ user.balance }}
         </div>
 
-        <h2>Eventos Disponíveis</h2>
-        <div class="events">
-            {% for event in events %}
-            <div class="event">
-                <h3>{{ event.title }}</h3>
-                <p>{{ event.description }}</p>
-                <a href="{{ url_for('place_bet', event_id=event.id) }}"><button>Apostar</button></a>
+        <div class="search-container">
+            <input type="text" placeholder="Busque por um evento..." id="search">
+            <button onclick="searchEvents()">Buscar</button>
+        </div>
+
+        <div class="highlights">
+            <h3>Destaques</h3>
+            <div class="events-grid">
+                <div class="event-card">
+                    <h4>Eventos Próximos de Vencer</h4>
+                    <p>Confira os eventos cujas apostas estão para encerrar em breve.</p>
+                    <a href="/upcoming_events" class="button">Ver mais</a>
+                </div>
+                <div class="event-card">
+                    <h4>Eventos Mais Apostados</h4>
+                    <p>Veja os eventos com maior número de apostas atualmente.</p>
+                    <a href="/top_events" class="button">Ver mais</a>
+                </div>
+                <div class="event-card">
+                    <h4>Olimpíada</h4>
+                    <p>Explore eventos relacionados aos jogos olímpicos.</p>
+                    <a href="/category/olympics" class="button">Ver mais</a>
+                </div>
+                <div class="event-card">
+                    <h4>Catástrofes</h4>
+                    <p>Veja apostas envolvendo eventos naturais e outros.</p>
+                    <a href="/category/disasters" class="button">Ver mais</a>
+                </div>
+                <div class="event-card">
+                    <h4>Eleições</h4>
+                    <p>Participe das apostas sobre eventos eleitorais.</p>
+                    <a href="/category/elections" class="button">Ver mais</a>
+                </div>
+                <div class="event-card">
+                    <h4>Bolsa de Valores</h4>
+                    <p>Descubra apostas sobre a movimentação da bolsa de valores.</p>
+                    <a href="/category/stock_market" class="button">Ver mais</a>
+                </div>
             </div>
-            {% endfor %}
         </div>
     </div>
+
+    <script>
+        function searchEvents() {
+            const query = document.getElementById("search").value;
+            if (query) {
+                window.location.href = `/search?query=${query}`;
+            }
+        }
+    </script>
 </body>
 </html>
