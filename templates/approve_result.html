@@ -90,13 +90,14 @@
         </div>
 
         <form method="POST">
-            <label for="result">Resultado do Evento:</label>
-            <select id="result" name="result">
-                <option value="sim">Sim</option>
-                <option value="nao">Não</option>
+            <label for="result">Escolha o resultado do evento:</label>
+            <select name="result" id="result" required>
+                <option value="yes">Sim</option>
+                <option value="no">Não</option>
             </select>
             <button type="submit">Aprovar Resultado</button>
         </form>
+        
         
         {% if message %}
             <p>{{ message }}</p>

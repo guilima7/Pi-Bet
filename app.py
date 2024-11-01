@@ -130,12 +130,22 @@ def signup():
 
     return render_template('signup.html', message=message)
 
+@app.route('/welcome')
+def welcome():
+    return render_template('welcome.html')
+
+
+
 @app.route('/home')
 @login_required
 def home():
     user = User.query.get(session['user_id'])
     events = Event.query.filter_by(status='approved').all()  # Pegar todos os eventos aprovados do banco de dados
-    return render_template('home.html', user=user, events=events)
+    user_bets = Transaction.query.filter_by(user_id=user.id, type='bet').all()  # Filtrar apenas transações de apostas do usuário
+    
+    return render_template('home.html', user=user, events=events, user_bets=user_bets)
+
+
 
 @app.route('/search', methods=['GET'])
 @login_required
@@ -303,15 +313,12 @@ def wallet():
 def approve_result(event_id):
     # Busca o evento pelo ID
     event = Event.query.get_or_404(event_id)
-    message = ''
-
+    
     if request.method == 'POST':
-        # Obter o valor do resultado do formulário
         result = request.form.get('result')
 
-        # Corrigir valores válidos: aceitando 'sim' e 'nao'
-        if result not in ['sim', 'nao']:
-            message = 'Resultado inválido. Insira "sim" ou "nao".'
+        if result not in ['yes', 'no']:
+            message = 'Resultado inválido.'
             return render_template('approve_result.html', event=event, message=message)
 
         # Define o resultado do evento
@@ -324,43 +331,65 @@ def approve_result(event_id):
         message = 'Resultado aprovado e ganhos distribuídos com sucesso!'
         return redirect(url_for('approve_events'))
 
-    return render_template('approve_result.html', event=event, message=message)
-
-
+    return render_template('approve_result.html', event=event)
 
 def distribute_winnings(event):
-    # Obter o valor total apostado
-    total_amount = event.total_yes_bets + event.total_no_bets
-
-    # Determinar o valor apostado no resultado vencedor
     if event.result == 'yes':
         winning_amount = event.total_yes_bets
     else:
         winning_amount = event.total_no_bets
 
-    # Caso não haja apostas no resultado vencedor, não há nada a distribuir
-    if winning_amount == 0:
-        return
+    total_amount = event.total_yes_bets + event.total_no_bets
 
-    # Calcula a proporção de pagamento
-    payout_ratio = total_amount / winning_amount
+    # Se houver um valor a ser distribuído
+    if winning_amount > 0:
+        payout_ratio = total_amount / winning_amount
 
-    # Obter todas as apostas feitas para o evento
-    bets = Transaction.query.filter_by(type='bet').all()
+        # Obter todos os usuários que apostaram no resultado correto
+        bets = Transaction.query.filter_by(type='bet', event_id=event.id).all()
 
-    for bet in bets:
-        # Verifica se a aposta é referente ao evento atual e se está no lado vencedor
-        if bet.amount < 0 and bet.user_id is not None:
+        for bet in bets:
             user = User.query.get(bet.user_id)
-            if (event.result == 'yes' and event.total_yes_bets == abs(bet.amount)) or \
-               (event.result == 'no' and event.total_no_bets == abs(bet.amount)):
-                # Calcula o valor ganho e adiciona ao saldo do usuário
-                winnings = abs(bet.amount) * payout_ratio
-                user.balance += winnings
+            if (event.result == 'yes' and bet.amount > 0) or (event.result == 'no' and bet.amount < 0):
+                user.balance += abs(bet.amount) * payout_ratio
                 db.session.add(user)
 
-    # Confirmar as mudanças no banco de dados
-    db.session.commit()
+        db.session.commit()
+
+
+
+
+def distribute_winnings(event):
+    # Calcula o valor total apostado no evento
+    total_amount = event.total_yes_bets + event.total_no_bets
+    
+    # Determina quais apostas ganharam
+    if event.result == 'yes':
+        winning_amount = event.total_yes_bets
+    else:
+        winning_amount = event.total_no_bets
+
+    if winning_amount > 0:
+        # Calcula a proporção de pagamento para os vencedores
+        payout_ratio = total_amount / winning_amount
+
+        # Seleciona os usuários que fizeram as apostas vencedoras
+        if event.result == 'yes':
+            winning_bets = Transaction.query.filter_by(type='bet', event_id=event.id, bet_option='yes').all()
+        else:
+            winning_bets = Transaction.query.filter_by(type='bet', event_id=event.id, bet_option='no').all()
+
+        # Distribui o valor proporcionalmente aos vencedores
+        for bet in winning_bets:
+            user = User.query.get(bet.user_id)
+            user.balance += bet.amount * payout_ratio
+            db.session.add(user)
+
+        # Salva as mudanças no banco de dados
+        db.session.commit()
+
+
+
 
 @app.route('/logout')
 @login_required

@@ -202,6 +202,21 @@
         </div>
     </div>
 
+    <div class="highlights">
+        <h3>Minhas Apostas</h3>
+        <div class="events-grid">
+            {% for bet in user_bets %}
+                <div class="event-card">
+                    <h4>Tipo de Aposta: {{ bet.type }}</h4>
+                    <p>Valor Apostado: R$ {{ bet.amount }}</p>
+                    <p>Data da Aposta: {{ bet.timestamp.strftime('%d/%m/%Y %H:%M') }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    
+
     <script>
         function searchEvents() {
             const query = document.getElementById("search").value;
