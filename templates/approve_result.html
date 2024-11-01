@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aposta | Plataforma de Apostas</title>
+    <title>Aprovar Resultado do Evento | Plataforma de Apostas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <style>
         body {
             display: flex;
+            align-items: center;
+            justify-content: center;
             height: 100vh;
             margin: 0;
             font-family: 'Roboto', sans-serif;
             background: linear-gradient(135deg, #000000, #ff1493);
             color: #ffffff;
-            align-items: center;
-            justify-content: center;
         }
         .container {
             background: rgba(0, 0, 0, 0.8);
@@ -41,14 +41,6 @@
             font-weight: bold;
             color: #ffffff;
         }
-        input, select {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 20px;
-            border: none;
-            border-radius: 5px;
-        }
         button {
             background: #ff1493;
             color: #ffffff;
@@ -60,7 +52,7 @@
             transition: background 0.3s;
             width: 100%;
             font-size: 1.2em;
-            margin-bottom: 20px;
+            margin-top: 20px;
         }
         button:hover {
             background: #ff69b4;
@@ -89,32 +81,29 @@
 </head>
 <body>
     <div class="container">
-        <h2>Fazer Aposta</h2>
+        <h2>Aprovar Resultado do Evento</h2>
         
         <div class="event-info">
             <p><strong>Título do Evento:</strong> {{ event.title }}</p>
             <p><strong>Descrição:</strong> {{ event.description }}</p>
-            <p><strong>Valor da Cota:</strong> R$ {{ event.value }}</p>
+            <p><strong>Data do Evento:</strong> {{ event.event_date }}</p>
         </div>
 
-        <form method="POST" action="{{ url_for('place_bet', event_id=event.id) }}">
-            <label for="bet_option">Escolha sua aposta:</label>
-            <select id="bet_option" name="bet_option" required>
-                <option value="yes">Sim</option>
-                <option value="no">Não</option>
+        <form method="POST">
+            <label for="result">Resultado do Evento:</label>
+            <select id="result" name="result">
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
             </select>
-
-            <label for="amount">Valor da Aposta (R$):</label>
-            <input type="number" id="amount" name="amount" step="0.01" min="1" required>
-
-            <button type="submit">Fazer Aposta</button>
+            <button type="submit">Aprovar Resultado</button>
         </form>
         
         {% if message %}
             <p>{{ message }}</p>
         {% endif %}
         
-        <p><a href="{{ url_for('home') }}">Voltar para Home</a></p>
+        
+        <p><a href="{{ url_for('approve_events') }}">Voltar para Aprovação de Eventos</a></p>
     </div>
 </body>
 </html>

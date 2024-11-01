@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprovar Eventos | Plataforma de Apostas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #000000, #ff1493);
+            color: #ffffff;
+            padding: 40px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .event-card {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.6);
+            margin-bottom: 20px;
+        }
+        .event-card h4 {
+            color: #ff69b4;
+            margin-bottom: 10px;
+        }
+        .event-card p {
+            color: #ffffff;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .approve {
+            background: #28a745;
+            color: #ffffff;
+        }
+        .reject {
+            background: #dc3545;
+            color: #ffffff;
+        }
+        .back-button {
+            background: #ff1493;
+            color: #ffffff;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+            display: inline-block;
+        }
+        .no-events {
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 50px;
+            color: #ff69b4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Aprovar Eventos</h2>
+
+        {% if events %}
+            {% for event in events %}
+                <div class="event-card">
+                    <h4>{{ event.title }}</h4>
+                    <p>{{ event.description }}</p>
+                    <p>Data do Evento: {{ event.event_date }}</p>
+                    <p>Valor da Cota: R$ {{ event.value }}</p>
+                    <form method="POST" action="{{ url_for('approve_events') }}">
+                        <input type="hidden" name="event_id" value="{{ event.id }}">
+                        <button type="submit" name="action" value="approve" class="button approve">Aprovar</button>
+                        <button type="submit" name="action" value="reject" class="button reject">Rejeitar</button>
+                    </form>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-events">
+                Não há eventos pendentes para aprovação.
+            </div>
+        {% endif %}
+
+        <!-- Botão para Voltar ao Menu -->
+        <a href="{{ url_for('home') }}" class="back-button">Voltar ao Menu</a>
+    </div>
+</body>
+</html>

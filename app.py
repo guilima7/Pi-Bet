@@ -4,8 +4,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
 
-
-
 # Inicializar o Flask
 app = Flask(__name__)
 
@@ -24,6 +22,7 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     balance = db.Column(db.Float, default=0.0)
+    role = db.Column(db.String(10), nullable=False, default='user')  # 'user' ou 'admin'
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -43,6 +42,10 @@ class Event(db.Model):
     start_date = db.Column(db.String(10), nullable=False)
     end_date = db.Column(db.String(10), nullable=False)
     event_date = db.Column(db.String(10), nullable=False)
+    status = db.Column(db.String(10), nullable=False, default='pending')  # 'pending' ou 'approved'
+    result = db.Column(db.String(5))  # 'yes' ou 'no' ou None
+    total_yes_bets = db.Column(db.Float, default=0.0)  # Valor total apostado no "Sim"
+    total_no_bets = db.Column(db.Float, default=0.0)   # Valor total apostado no "Não"
 
     def __repr__(self):
         return f'<Event {self.title}>'
@@ -57,6 +60,8 @@ class Transaction(db.Model):
 
     def __repr__(self):
         return f'<Transaction {self.type} - {self.amount}>'
+    
+    
 
 # Função para proteger rotas
 def login_required(f):
@@ -64,6 +69,18 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
             return redirect('/')
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Função para proteger rotas de administrador
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect('/')
+        user = User.query.get(session['user_id'])
+        if user.role != 'admin':
+            return redirect('/home')
         return f(*args, **kwargs)
     return decorated_function
 
@@ -98,11 +115,9 @@ def signup():
             return render_template('signup.html', message=message)
 
         # Verificar se o email ou username já existem
-        print(f"Tentando registrar usuário: {username}, email: {email}")
         existing_user = User.query.filter((User.username == username) | (User.email == email)).first()
         if existing_user:
             message = 'Usuário ou email já cadastrado.'
-            print("Usuário já existe no banco de dados")
         else:
             try:
                 new_user = User(username=username, email=email)
@@ -110,10 +125,8 @@ def signup():
                 db.session.add(new_user)
                 db.session.commit()
                 message = 'Usuário registrado com sucesso!'
-                print("Usuário registrado com sucesso!")
             except Exception as e:
                 message = "Erro ao registrar o usuário."
-                print("Erro ao registrar o usuário:", e)
 
     return render_template('signup.html', message=message)
 
@@ -121,9 +134,8 @@ def signup():
 @login_required
 def home():
     user = User.query.get(session['user_id'])
-    events = Event.query.all()  # Pegar todos os eventos do banco de dados
+    events = Event.query.filter_by(status='approved').all()  # Pegar todos os eventos aprovados do banco de dados
     return render_template('home.html', user=user, events=events)
-
 
 @app.route('/search', methods=['GET'])
 @login_required
@@ -138,9 +150,6 @@ def search():
 
     return render_template('search_results.html', query=query, results=results)
 
-
-# Código em app.py (parte de criação de evento)
-
 @app.route('/create_event', methods=['GET', 'POST'])
 @login_required
 def create_event():
@@ -150,10 +159,11 @@ def create_event():
             title = request.form['title']
             description = request.form['description']
             value = float(request.form['value'])
-            start_date = datetime.strptime(request.form['start_date'], "%Y-%m-%d %H:%M")
-            end_date = datetime.strptime(request.form['end_date'], "%Y-%m-%d %H:%M")
-            event_date = datetime.strptime(request.form['event_date'], "%Y-%m-%d").date()
-            
+            start_date = request.form['start_date']
+            end_date = request.form['end_date']
+            event_date = request.form['event_date']
+
+            # Validações
             if len(title) > 50:
                 message = 'O título deve ter no máximo 50 caracteres.'
             elif len(description) > 150:
@@ -165,20 +175,25 @@ def create_event():
             elif end_date >= event_date:
                 message = 'A data do evento deve ser após o período de recebimento das apostas.'
             else:
-                # Criar um novo evento
+                # Criar um novo evento com status 'pending'
                 new_event = Event(
                     title=title,
                     description=description,
                     value=value,
-                    start_date=start_date.strftime("%Y-%m-%d %H:%M"),
-                    end_date=end_date.strftime("%Y-%m-%d %H:%M"),
-                    event_date=event_date.strftime("%Y-%m-%d")
+                    start_date=start_date,
+                    end_date=end_date,
+                    event_date=event_date,
+                    status='pending'  # Certifique-se de que o status seja 'pending'
                 )
 
                 # Adicionar ao banco de dados
                 db.session.add(new_event)
                 db.session.commit()
-                message = "Evento criado com sucesso!"
+                
+                # Print para verificar o evento criado
+                print(f"Evento criado: {new_event}")
+
+                message = "Evento criado com sucesso! Aguardando aprovação do administrador."
                 return redirect('/home')
 
         except ValueError:
@@ -186,6 +201,27 @@ def create_event():
 
     return render_template('create_event.html', message=message)
 
+@app.route('/approve_events', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def approve_events():
+    # Pegar todos os eventos que estão pendentes
+    events = Event.query.filter_by(status='pending').all()
+
+    if request.method == 'POST':
+        event_id = request.form.get('event_id')
+        action = request.form.get('action')
+
+        # Buscar o evento correspondente
+        event = Event.query.get(event_id)
+        if event:
+            if action == 'approve':
+                event.status = 'approved'
+            elif action == 'reject':
+                db.session.delete(event)
+            db.session.commit()
+
+    return render_template('approve_events.html', events=events)
 
 @app.route('/bet/<int:event_id>', methods=['GET', 'POST'])
 @login_required
@@ -193,6 +229,7 @@ def place_bet(event_id):
     event = Event.query.get_or_404(event_id)
     message = ''
     if request.method == 'POST':
+        bet_option = request.form['bet_option']  # "yes" ou "no"
         amount = float(request.form['amount'])
         user = User.query.get(session['user_id'])
 
@@ -200,8 +237,11 @@ def place_bet(event_id):
             # Subtrair valor da aposta do saldo do usuário
             user.balance -= amount
 
-            # Registrar a aposta (neste exemplo, apenas imprimindo no console)
-            print(f"Usuário {user.username} apostou R$ {amount} no evento {event.title}")
+            # Registrar a aposta no evento específico
+            if bet_option == 'yes':
+                event.total_yes_bets += amount
+            elif bet_option == 'no':
+                event.total_no_bets += amount
 
             # Salvar as mudanças no banco de dados
             db.session.commit()
@@ -217,7 +257,6 @@ def place_bet(event_id):
 
     return render_template('bet.html', event=event, message=message)
 
-# Código em app.py
 @app.route('/wallet', methods=['GET', 'POST'])
 @login_required
 def wallet():
@@ -226,15 +265,15 @@ def wallet():
 
     if request.method == 'POST':
         action = request.form.get('action')
-        
+
         if action == 'deposit':
-            # Depósito
             try:
                 amount = float(request.form['amount'])
                 if amount > 0:
                     user.balance += amount
+                    # Registrar a transação de depósito no banco de dados
                     db.session.add(Transaction(user_id=user.id, type='deposit', amount=amount))
-                    db.session.commit()
+                    db.session.commit()  # Commit para salvar as alterações no banco de dados
                     message = "Saldo adicionado com sucesso!"
                 else:
                     message = "O valor deve ser maior que zero."
@@ -242,34 +281,14 @@ def wallet():
                 message = "Por favor, insira um valor numérico válido."
 
         elif action == 'withdraw':
-            # Saque
             try:
                 amount = float(request.form['withdraw_amount'])
                 if amount > 0 and amount <= user.balance:
-                    if amount > 101000:
-                        message = "O valor máximo de saque por dia é de R$ 101.000,00."
-                    else:
-                        # Calculando a taxa
-                        if amount <= 100:
-                            fee = amount * 0.04
-                        elif amount <= 1000:
-                            fee = amount * 0.03
-                        elif amount <= 5000:
-                            fee = amount * 0.02
-                        elif amount <= 100000:
-                            fee = amount * 0.01
-                        else:
-                            fee = 0.0
-
-                        total_withdraw = amount + fee
-                        
-                        if total_withdraw > user.balance:
-                            message = f"Saldo insuficiente para realizar o saque com a taxa aplicada de R$ {fee:.2f}."
-                        else:
-                            user.balance -= total_withdraw
-                            db.session.add(Transaction(user_id=user.id, type='withdraw', amount=amount, fee=fee))
-                            db.session.commit()
-                            message = f"Saque de R$ {amount:.2f} realizado com sucesso! Taxa de R$ {fee:.2f} aplicada."
+                    user.balance -= amount
+                    # Registrar a transação de saque no banco de dados
+                    db.session.add(Transaction(user_id=user.id, type='withdraw', amount=amount))
+                    db.session.commit()  # Commit para salvar as alterações no banco de dados
+                    message = f"Saque de R$ {amount:.2f} realizado com sucesso!"
                 else:
                     message = "O valor deve ser maior que zero e menor ou igual ao saldo disponível."
             except ValueError:
@@ -278,67 +297,76 @@ def wallet():
     transactions = Transaction.query.filter_by(user_id=user.id).all()
     return render_template('wallet.html', user=user, message=message, transactions=transactions)
 
-
-@app.route('/welcome', methods=['GET'])
-def welcome():
-    return render_template('welcome.html')
-
-from flask import send_from_directory
-
-@app.route('/static/images/<path:filename>')
-def custom_static(filename):
-    return send_from_directory('static/images', filename)
-
-@app.route('/withdraw', methods=['POST'])
+@app.route('/approve_result/<int:event_id>', methods=['GET', 'POST'])
 @login_required
-def withdraw():
-    user = User.query.get(session['user_id'])
+@admin_required
+def approve_result(event_id):
+    # Busca o evento pelo ID
+    event = Event.query.get_or_404(event_id)
     message = ''
 
     if request.method == 'POST':
-        try:
-            withdraw_amount = float(request.form['withdraw_amount'])
-            if withdraw_amount <= 0:
-                message = "O valor do saque deve ser maior que zero."
-            elif withdraw_amount > user.balance:
-                message = "Saldo insuficiente para realizar o saque."
-            else:
-                # Calcular a taxa com base na tabela fornecida
-                if withdraw_amount <= 100:
-                    fee_rate = 0.04
-                elif withdraw_amount <= 1000:
-                    fee_rate = 0.03
-                elif withdraw_amount <= 5000:
-                    fee_rate = 0.02
-                elif withdraw_amount <= 100000:
-                    fee_rate = 0.01
-                else:
-                    fee_rate = 0.0
+        # Obter o valor do resultado do formulário
+        result = request.form.get('result')
 
-                fee = withdraw_amount * fee_rate
-                total_withdraw = withdraw_amount + fee
+        # Corrigir valores válidos: aceitando 'sim' e 'nao'
+        if result not in ['sim', 'nao']:
+            message = 'Resultado inválido. Insira "sim" ou "nao".'
+            return render_template('approve_result.html', event=event, message=message)
 
-                if total_withdraw > user.balance:
-                    message = "Saldo insuficiente para realizar o saque e pagar a taxa."
-                else:
-                    user.balance -= total_withdraw
-                    db.session.commit()
-                    message = f"Saque de R$ {withdraw_amount:.2f} realizado com sucesso! Taxa aplicada: R$ {fee:.2f}."
+        # Define o resultado do evento
+        event.result = result
+        db.session.commit()
 
-        except ValueError:
-            message = "Por favor, insira um valor numérico válido."
+        # Distribuir ganhos para os vencedores
+        distribute_winnings(event)
 
-    return redirect(url_for('wallet', message=message))
+        message = 'Resultado aprovado e ganhos distribuídos com sucesso!'
+        return redirect(url_for('approve_events'))
+
+    return render_template('approve_result.html', event=event, message=message)
+
+
+
+def distribute_winnings(event):
+    # Obter o valor total apostado
+    total_amount = event.total_yes_bets + event.total_no_bets
+
+    # Determinar o valor apostado no resultado vencedor
+    if event.result == 'yes':
+        winning_amount = event.total_yes_bets
+    else:
+        winning_amount = event.total_no_bets
+
+    # Caso não haja apostas no resultado vencedor, não há nada a distribuir
+    if winning_amount == 0:
+        return
+
+    # Calcula a proporção de pagamento
+    payout_ratio = total_amount / winning_amount
+
+    # Obter todas as apostas feitas para o evento
+    bets = Transaction.query.filter_by(type='bet').all()
+
+    for bet in bets:
+        # Verifica se a aposta é referente ao evento atual e se está no lado vencedor
+        if bet.amount < 0 and bet.user_id is not None:
+            user = User.query.get(bet.user_id)
+            if (event.result == 'yes' and event.total_yes_bets == abs(bet.amount)) or \
+               (event.result == 'no' and event.total_no_bets == abs(bet.amount)):
+                # Calcula o valor ganho e adiciona ao saldo do usuário
+                winnings = abs(bet.amount) * payout_ratio
+                user.balance += winnings
+                db.session.add(user)
+
+    # Confirmar as mudanças no banco de dados
+    db.session.commit()
 
 @app.route('/logout')
 @login_required
 def logout():
-    # Limpar a sessão do usuário
     session.pop('user_id', None)
     return redirect('/')
-
-
-
 
 # Iniciar o servidor Flask
 if __name__ == "__main__":

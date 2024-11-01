@@ -120,7 +120,24 @@
         <h2>Menu</h2>
         <a href="{{ url_for('wallet') }}">Carteira</a>
         <a href="{{ url_for('create_event') }}">Criar Evento</a>
-        <a href="/logout">Sair</a>
+        {% if user.role == 'admin' %}
+        <a href="{{ url_for('approve_events') }}">Aprovar Eventos</a>
+        <h3>Eventos Aguardando Resultado</h3>
+        <ul>
+            {% for event in events %}
+                {% if event.status == 'approved' and event.result is none %}
+                    <li>
+                        <a href="{{ url_for('approve_result', event_id=event.id) }}">
+                        Aprovar Resultado de {{ event.title }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+    
+    
+        <a href="{{ url_for('logout') }}">Sair</a>
     </div>
 
     <div class="main-content">

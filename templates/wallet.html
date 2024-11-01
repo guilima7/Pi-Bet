@@ -97,6 +97,9 @@
         <p>Saldo atual: R$ {{ user.balance }}</p>
 
         <form method="POST" action="/wallet">
+            <!-- Adicionei o campo oculto para identificar a ação -->
+            <input type="hidden" name="action" value="deposit">
+
             <label for="method">Escolha o método de pagamento:</label>
             <div>
                 <button type="button" class="payment-button" onclick="selectPaymentMethod('pix')">Pix</button>
