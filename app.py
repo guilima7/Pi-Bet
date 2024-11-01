@@ -3,6 +3,32 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+# Função para enviar e-mail
+def enviar_email(destinatario, assunto, mensagem):
+    servidor_smtp = 'smtp.gmail.com'
+    porta = 587
+    usuario = 'seu_email@gmail.com'
+    senha = 'sua_senha'
+
+    email = MIMEMultipart()
+    email['From'] = usuario
+    email['To'] = destinatario
+    email['Subject'] = assunto
+    email.attach(MIMEText(mensagem, 'plain'))
+
+    try:
+        servidor = smtplib.SMTP(servidor_smtp, porta)
+        servidor.starttls()
+        servidor.login(usuario, senha)
+        servidor.sendmail(usuario, destinatario, email.as_string())
+        servidor.quit()
+        print(f"E-mail enviado para {destinatario} com sucesso!")
+    except Exception as e:
+        print(f"Falha ao enviar e-mail: {str(e)}")
 
 # Inicializar o Flask
 app = Flask(__name__)
@@ -61,8 +87,6 @@ class Transaction(db.Model):
     def __repr__(self):
         return f'<Transaction {self.type} - {self.amount}>'
     
-    
-
 # Função para proteger rotas
 def login_required(f):
     @wraps(f)
@@ -134,8 +158,6 @@ def signup():
 def welcome():
     return render_template('welcome.html')
 
-
-
 @app.route('/home')
 @login_required
 def home():
@@ -144,8 +166,6 @@ def home():
     user_bets = Transaction.query.filter_by(user_id=user.id, type='bet').all()  # Filtrar apenas transações de apostas do usuário
     
     return render_template('home.html', user=user, events=events, user_bets=user_bets)
-
-
 
 @app.route('/search', methods=['GET'])
 @login_required
@@ -261,7 +281,12 @@ def place_bet(event_id):
             db.session.add(new_transaction)
             db.session.commit()
 
-            message = "Aposta realizada com sucesso!"
+            # Enviar um e-mail de confirmação para o usuário
+            assunto = 'Confirmação da Aposta'
+            mensagem = f'Obrigado por apostar no evento "{event.title}"! A sua aposta foi concluída com sucesso. Valor da aposta: R$ {amount:.2f}. Sua aposta foi no "{bet_option.upper()}".'
+            enviar_email(user.email, assunto, mensagem)
+
+            message = "Aposta realizada com sucesso! Um e-mail de confirmação foi enviado."
         else:
             message = "Saldo insuficiente para realizar a aposta."
 
@@ -355,41 +380,6 @@ def distribute_winnings(event):
                 db.session.add(user)
 
         db.session.commit()
-
-
-
-
-def distribute_winnings(event):
-    # Calcula o valor total apostado no evento
-    total_amount = event.total_yes_bets + event.total_no_bets
-    
-    # Determina quais apostas ganharam
-    if event.result == 'yes':
-        winning_amount = event.total_yes_bets
-    else:
-        winning_amount = event.total_no_bets
-
-    if winning_amount > 0:
-        # Calcula a proporção de pagamento para os vencedores
-        payout_ratio = total_amount / winning_amount
-
-        # Seleciona os usuários que fizeram as apostas vencedoras
-        if event.result == 'yes':
-            winning_bets = Transaction.query.filter_by(type='bet', event_id=event.id, bet_option='yes').all()
-        else:
-            winning_bets = Transaction.query.filter_by(type='bet', event_id=event.id, bet_option='no').all()
-
-        # Distribui o valor proporcionalmente aos vencedores
-        for bet in winning_bets:
-            user = User.query.get(bet.user_id)
-            user.balance += bet.amount * payout_ratio
-            db.session.add(user)
-
-        # Salva as mudanças no banco de dados
-        db.session.commit()
-
-
-
 
 @app.route('/logout')
 @login_required
