@@ -118,13 +118,23 @@ def login():
 
         # Verificar se o usuário existe e se a senha está correta
         user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            session['user_id'] = user.id
-            return redirect('/home')
+
+        # Adicionar prints para debugging
+        if user:
+            print(f'Usuário encontrado: {user.username}, Role: {user.role}')
+            if user.check_password(password):
+                print('Senha correta')
+                session['user_id'] = user.id
+                return redirect('/home')
+            else:
+                print('Senha incorreta')
         else:
-            message = 'Usuário ou senha incorretos.'
+            print('Usuário não encontrado')
+
+        message = 'Usuário ou senha incorretos.'
 
     return render_template('login.html', message=message)
+
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -318,14 +328,32 @@ def wallet():
         elif action == 'withdraw':
             try:
                 amount = float(request.form['withdraw_amount'])
-                if amount > 0 and amount <= user.balance:
-                    user.balance -= amount
-                    # Registrar a transação de saque no banco de dados
-                    db.session.add(Transaction(user_id=user.id, type='withdraw', amount=amount))
-                    db.session.commit()  # Commit para salvar as alterações no banco de dados
-                    message = f"Saque de R$ {amount:.2f} realizado com sucesso!"
+                if amount > 0:
+                    # Aplicar a taxa de saque conforme a tabela
+                    if amount <= 100:
+                        taxa = 0.04  # 4%
+                    elif amount <= 1000:
+                        taxa = 0.03  # 3%
+                    elif amount <= 5000:
+                        taxa = 0.02  # 2%
+                    elif amount <= 100000:
+                        taxa = 0.01  # 1%
+                    else:
+                        taxa = 0.00  # Isento de taxa
+
+                    valor_taxa = amount * taxa
+                    valor_saque_total = amount + valor_taxa
+
+                    # Verificar se o saldo do usuário é suficiente para cobrir o valor do saque e a taxa
+                    if valor_saque_total <= user.balance:
+                        user.balance -= valor_saque_total
+                        db.session.add(Transaction(user_id=user.id, type='withdraw', amount=-amount))
+                        db.session.commit()  # Commit para salvar as alterações no banco de dados
+                        message = f"Saque de R$ {amount:.2f} realizado com sucesso! Taxa aplicada: R$ {valor_taxa:.2f}."
+                    else:
+                        message = "Saldo insuficiente para realizar o saque, considerando a taxa aplicada."
                 else:
-                    message = "O valor deve ser maior que zero e menor ou igual ao saldo disponível."
+                    message = "O valor deve ser maior que zero."
             except ValueError:
                 message = "Por favor, insira um valor numérico válido."
 

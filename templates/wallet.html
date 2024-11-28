@@ -128,7 +128,10 @@
             <button type="submit">Adicionar Saldo</button>
         </form>
 
-        <form method="POST" action="/withdraw">
+        <form method="POST" action="/wallet">
+            <!-- Campo oculto para identificar a ação de saque -->
+            <input type="hidden" name="action" value="withdraw">
+
             <label for="withdraw_amount">Valor a sacar (R$):</label><br>
             <input type="number" id="withdraw_amount" name="withdraw_amount" step="0.01" required><br><br>
 
